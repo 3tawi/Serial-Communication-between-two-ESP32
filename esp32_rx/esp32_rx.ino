@@ -5,7 +5,6 @@
 */
  
 #include <MatrixHardware_ESP32_V0.h>                // This file contains multiple ESP32 hardware configurations, edit the file to define GPIOPINOUT (or add #define GPIOPINOUT with a hardcoded number before this #include)
-//#include "MatrixHardware_Custom.h"                  // Copy an existing MatrixHardware file to your Sketch directory, rename, customize, and you can include it like this
 #include <SmartMatrix.h>
 
 #define COLOR_DEPTH 24                  // Choose the color depth used for storing pixels in the layers: 24 or 48 (24 is good for most sketches - If the sketch uses type `rgb24` directly, COLOR_DEPTH must be 24)
@@ -21,74 +20,55 @@ SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth,
 SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kBackgroundLayerOptions);
 
 
+#define UpHeader 0x01
 #define DataFrame 0x02
-#define ClearHeader 0xaa
-#define UpHeader 0x08
-#define endHeader 0x04
+#define endHeader 0x03
+
 uint32_t lastData = 1000;
-uint8_t readByte;
-uint8_t buff[5];
-    
-    void clsFrame() {
-      if (Serial.read() != endHeader)
-            return;
-      backgroundLayer.fillScreen({ 0, 0, 0 });
-    }
+uint8_t buff[3];
 
-    void drawUpdFrame() {
+    void drawFrame() {
+      if (Serial.read() != UpHeader)
+            return;
+      if (Serial.read() != DataFrame)
+            return;
+      int bufferSize = (kMatrixHeight * kMatrixWidth) + 1;
+      rgb24 *buffer = backgroundLayer.backBuffer();
+      for (int i = 0; i < bufferSize; i++) {
+        Serial.readBytes(buff, 3);
+        buffer[i] = rgb24 {buff[0], buff[1], buff[2]};
+      }
       if (Serial.read() != endHeader)
             return;
-      backgroundLayer.swapBuffers(true);
-    }
-
-    void drawFrameserl() {
-      int bytesReceived = Serial.readBytes(buff, 5);
-      if (Serial.read() != endHeader)
-            return;
-      backgroundLayer.drawPixel(buff[0], buff[1], {buff[2], buff[3], buff[4]});
+      backgroundLayer.swapBuffers();
     }
 
 void setup() {
-  // Enable printing FPS count information
   Serial.begin(1250000);
-  // Wait for Serial to be ready
   delay(3000);
-
   matrix.addLayer(&backgroundLayer); 
   matrix.begin();
   backgroundLayer.setBrightness(255);
-  backgroundLayer.enableColorCorrection(true);
+  //backgroundLayer.enableColorCorrection(true);
 }
 
 void loop() {
-        // Make sure serial data is waiting
-        if (Serial.available() > 0) {
-          readByte = Serial.read();
-          switch (readByte) {
-            case DataFrame:
-                 drawFrameserl();
-                 lastData = millis();
-                 break;
-            case UpHeader:
-                 drawUpdFrame();
-                 lastData = millis();
-                 break;
-            case ClearHeader:
-                 clsFrame();
-                 lastData = millis();
-                 break;
-            default:
-                 Serial.read();
-                 break;
-            }
-        }
-        else if (millis() - lastData > 3000) {
-            // If it's been longer than a second since we last received data
-            // blank the screen and notify that we're waiting for data.
-            backgroundLayer.fillScreen({ 0, 0, 0 });
-            backgroundLayer.setFont(font3x5);
-            backgroundLayer.drawString(3, 24, { 255, 0, 255 }, "Waiting");
-            backgroundLayer.swapBuffers(true);
-            lastData = millis();
-        }
+  if (Serial.available() > 0) {
+    switch (Serial.peek()) {
+      case UpHeader:
+         drawFrame();
+         lastData = millis();
+         break;
+      default:
+         Serial.read();
+         break;
+    }
+  }
+  else if (millis() - lastData > 3000) {
+      backgroundLayer.fillScreen({ 0, 0, 0 });
+      backgroundLayer.setFont(font3x5);
+      backgroundLayer.drawString(3, 24, { 255, 0, 255 }, "Waiting");
+      backgroundLayer.swapBuffers(true);
+      lastData = millis();
+   }
 }
