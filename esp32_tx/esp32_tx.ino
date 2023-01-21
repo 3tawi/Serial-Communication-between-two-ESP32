@@ -4,6 +4,7 @@
 // - AnimatedGIF Library:  https://github.com/bitbank2/AnimatedGIF
 */
  
+#include "MatrixCommon.h"
 #include <SD.h>
 #include <GifDecoder.h>
 #include "FilenameFunctions.h"
@@ -20,13 +21,13 @@ const uint16_t kMatrixHeight = 64;
 #define GIF_DIRECTORY "/gifs"
 int num_files;
 Stream* mySeriel;
+unsigned long displayStartTime_millis;
+int nextGIF = 1;   
+int inde = 0;
 
 GifDecoder<kMatrixWidth, kMatrixHeight, 12> decoder;
 const uint16_t NUM_LEDS = kMatrixWidth * kMatrixHeight + 1;
-uint8_t buff[3];
-uint8_t r[NUM_LEDS];
-uint8_t g[NUM_LEDS];
-uint8_t b[NUM_LEDS];
+rgb24 rgb[NUM_LEDS];
 
 
 // translates from x, y into an index into the LED array
@@ -45,26 +46,17 @@ void screenClearCallback(void) {
 void updateScreenCallback(void) {
   mySeriel->write(UpHeader);
   mySeriel->write(DataFrame);
-  for (int i = 0; i < NUM_LEDS; i++) {
-    buff[0] = r[i];
-    buff[1] = g[i];
-    buff[2] = b[i];
-    mySeriel->write(buff, 3);
-  }
+  mySeriel->write((char *)rgb, NUM_LEDS*3);
   mySeriel->write(endHeader);
-  //delay(30);
 }
 
 void drawPixelCallback(int16_t x, int16_t y, uint8_t red, uint8_t green, uint8_t blue) {
-  int xy = XY(x, y);
-  r[xy] = red;
-  g[xy] = green;
-  b[xy] = blue;
+  rgb[XY(x, y)] = rgb24 {red, green, blue};
 }
 
 // Setup method runs once, when the sketch starts
 void setup() {
-    Serial.begin(1250000);
+    Serial.begin(1350000);
     delay(5000);
     setDriver(&Serial);
     decoder.setScreenClearCallback(screenClearCallback);
@@ -100,16 +92,13 @@ void setup() {
 }
 
 void loop() {
-    static unsigned long displayStartTime_millis;
-    static int nextGIF = 1;   
-    static int index = 0;
     
     if((millis() - displayStartTime_millis) > DISPLAY_TIME_SECONDS)
         nextGIF = 1;
         
     if(nextGIF) {
         nextGIF = 0;
-        if (openGifFilenameByIndex(GIF_DIRECTORY, index) >= 0) {
+        if (openGifFilenameByIndex(GIF_DIRECTORY, inde) >= 0) {
             // Can clear screen for new animation here, but this might cause flicker with short animations
             // matrix.fillScreen(COLOR_BLACK);
             // matrix.swapBuffers();
@@ -125,8 +114,8 @@ void loop() {
         }
 
         // get the index for the next pass through
-        if (++index >= num_files) {
-            index = 0;
+        if (++inde >= num_files) {
+            inde = 0;
         }
 
     }
@@ -135,5 +124,4 @@ void loop() {
         // There's an error with this GIF, go to the next one
         nextGIF = 1;
     }
-  // delay(5);
 }
