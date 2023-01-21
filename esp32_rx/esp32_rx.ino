@@ -45,7 +45,7 @@ void setup() {
   matrix.addLayer(&backgroundLayer); 
   matrix.begin();
   backgroundLayer.setBrightness(255);
-  //backgroundLayer.enableColorCorrection(true);
+  backgroundLayer.enableColorCorrection(true);
 }
 
 void loop() {
