@@ -19,32 +19,28 @@ const uint8_t kBackgroundLayerOptions = (SM_BACKGROUND_OPTIONS_NONE);
 SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth, kDmaBufferRows, kPanelType, kMatrixOptions);
 SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kBackgroundLayerOptions);
 
-
 #define UpHeader 0x01
 #define DataFrame 0x02
 #define endHeader 0x03
 
 uint32_t lastData = 1000;
-uint8_t buff[3];
+const uint16_t NUM_LEDS = kMatrixWidth * kMatrixHeight + 1;
+
 
     void drawFrame() {
       if (Serial.read() != UpHeader)
             return;
       if (Serial.read() != DataFrame)
             return;
-      int bufferSize = (kMatrixHeight * kMatrixWidth) + 1;
       rgb24 *buffer = backgroundLayer.backBuffer();
-      for (int i = 0; i < bufferSize; i++) {
-        Serial.readBytes(buff, 3);
-        buffer[i] = rgb24 {buff[0], buff[1], buff[2]};
-      }
+      Serial.readBytes((char *)buffer, NUM_LEDS*3);
       if (Serial.read() != endHeader)
             return;
-      backgroundLayer.swapBuffers();
+      backgroundLayer.swapBuffers(true);
     }
 
 void setup() {
-  Serial.begin(1250000);
+  Serial.begin(1350000);
   delay(3000);
   matrix.addLayer(&backgroundLayer); 
   matrix.begin();
