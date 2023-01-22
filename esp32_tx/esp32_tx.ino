@@ -1,9 +1,10 @@
 /*
 // - Lien vidéo: https://youtu.be/AD6JaqEASAE
 // REQUIRES the following Arduino libraries:
+// - GifDecoder  Library:  https://github.com/pixelmatix/GifDecoder
 // - AnimatedGIF Library:  https://github.com/bitbank2/AnimatedGIF
 */
- 
+
 #include "MatrixCommon.h"
 #include <SD.h>
 #include <GifDecoder.h>
