@@ -205,8 +205,6 @@ void ShowGIF(char *name)
 } /* ShowGIF() */
 
 
-
-/************************* Arduino Sketch Setup and Loop() *******************************/
 void setup() {
   Serial.begin(1250000);
   delay(5000);
