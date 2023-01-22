@@ -22,12 +22,6 @@ const uint16_t kMatrixHeight = 64;
 const uint16_t NUM_LEDS = DISPLAY_WIDTH * kMatrixHeight + 1;
 rgb24 rgb[NUM_LEDS];
 
-typedef struct rgb_24 {
-  uint8_t red;
-  uint8_t green;
-  uint8_t blue;
-} rgb_24;
-
 
 void setDriver(Stream* s) {
   mySeriel = s;
@@ -44,11 +38,10 @@ uint16_t XY(uint8_t x, uint8_t y) {
   return (y * DISPLAY_WIDTH) + x;
 }
 
-void DrawPixelRow(int startX, int y, int numPixels, rgb_24 * data) {
+void DrawPixelRow(int startX, int y, int numPixels, rgb24 * data) {
   for(int i=0; i<numPixels; i++)
   {
-    rgb[XY(startX + i, y)] = rgb24 {data->red, data->green, data->blue};
-    data++;
+    rgb[XY(startX + i, y)] = data[i];
   }
 }
 
@@ -57,12 +50,12 @@ void GIFDraw(GIFDRAW *pDraw){
   uint8_t *s;
   //uint16_t *d, *usPalette, usTemp[320];
   int x, y, iWidth;
-  rgb_24 *d, *usPalette, usTemp[320];
+  rgb24 *d, *usPalette, usTemp[128];
 
   iWidth = pDraw->iWidth;
   if (iWidth > DISPLAY_WIDTH)
     iWidth = DISPLAY_WIDTH;
-  usPalette = (rgb_24*)pDraw->pPalette;
+  usPalette = (rgb24*)pDraw->pPalette;
 
   y = pDraw->iY + pDraw->y; // current line
   
@@ -103,7 +96,7 @@ void GIFDraw(GIFDRAW *pDraw){
       } // while looking for opaque pixels
       if (iCount) // any opaque pixels?
       {
-        DrawPixelRow(pDraw->iX+x, y, iCount, (rgb_24 *)usTemp);
+        DrawPixelRow(pDraw->iX+x, y, iCount, (rgb24 *)usTemp);
         x += iCount;
         iCount = 0;
       }
@@ -130,7 +123,7 @@ void GIFDraw(GIFDRAW *pDraw){
     // Translate the 8-bit pixels through the RGB565 palette (already byte reversed)
     for (x=0; x<iWidth; x++)
       usTemp[x] = usPalette[*s++];
-      DrawPixelRow(pDraw->iX, y, iWidth, (rgb_24 *)usTemp);
+      DrawPixelRow(pDraw->iX, y, iWidth, (rgb24 *)usTemp);
   }
 } /* GIFDraw() */
 
@@ -227,25 +220,15 @@ File root, gifFile;
 void loop() 
 {  
       root = FILESYSTEM.open(gifDir);
-      if (root)
-      {
-           gifFile = root.openNextFile();
-            while (gifFile)
-            {
-              if (!gifFile.isDirectory()) // play it
-              {
-                
-                // C-strings... urghh...                
-                memset(filePath, 0x0, sizeof(filePath));                
-                strcpy(filePath, gifFile.name());
-                
-                // Show it.
-                ShowGIF(filePath);
-               
-              }
-              gifFile.close();
-              gifFile = root.openNextFile();
-            }
+      if (root) {
+        gifFile = root.openNextFile();
+        while (gifFile) {
+          memset(filePath, 0x0, sizeof(filePath));                
+          strcpy(filePath, gifFile.name());
+          ShowGIF(filePath);
+          gifFile.close();
+          gifFile = root.openNextFile();
+          }
          root.close();
       } // root
       
