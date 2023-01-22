@@ -1,8 +1,9 @@
 /*
-// - Lien vidéo: https://youtu.be/iPlEjbkxA2w
+// - Lien vidéo: https://youtu.be/AD6JaqEASAE
 // REQUIRES the following Arduino libraries:
 // - SmartMatrix Library: https://github.com/pixelmatix/SmartMatrix
 */
+
 #include <MatrixHardware_ESP32_V0.h>                // This file contains multiple ESP32 hardware configurations, edit the file to define GPIOPINOUT (or add #define GPIOPINOUT with a hardcoded number before this #include)
 #include <SmartMatrix.h>
 
