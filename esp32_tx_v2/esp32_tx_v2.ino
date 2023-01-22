@@ -4,7 +4,6 @@
 // - AnimatedGIF Library:  https://github.com/bitbank2/AnimatedGIF
 */
 
-#include "MatrixCommon.h"
 #define FILESYSTEM SD
 #include <SD.h>
 #include <AnimatedGIF.h>
@@ -20,7 +19,14 @@ Stream* mySeriel;
 const uint16_t DISPLAY_WIDTH = 128;
 const uint16_t kMatrixHeight = 64; 
 const uint16_t NUM_LEDS = DISPLAY_WIDTH * kMatrixHeight + 1;
-rgb24 rgb[NUM_LEDS];
+
+typedef struct rgb24 {
+  uint8_t red;
+  uint8_t green;
+  uint8_t blue;
+} rgb24;
+
+rgb24 buff[NUM_LEDS];
 
 
 void setDriver(Stream* s) {
@@ -30,7 +36,7 @@ void setDriver(Stream* s) {
 void updateScreenCallback() {
   mySeriel->write(UpHeader);
   mySeriel->write(DataFrame);
-  mySeriel->write((char *)rgb, NUM_LEDS*3);
+  mySeriel->write((char *)buff, NUM_LEDS*3);
   mySeriel->write(endHeader);
 }
 
@@ -38,10 +44,10 @@ uint16_t XY(uint8_t x, uint8_t y) {
   return (y * DISPLAY_WIDTH) + x;
 }
 
-void DrawPixelRow(int startX, int y, int numPixels, rgb24 * data) {
+void DrawPixelRow(int startX, int y, int numPixels, rgb24 * color) {
   for(int i=0; i<numPixels; i++)
   {
-    rgb[XY(startX + i, y)] = data[i];
+    buff[XY(startX + i, y)] = color[i];
   }
 }
 
@@ -197,8 +203,6 @@ void ShowGIF(char *name)
 } /* ShowGIF() */
 
 
-
-/************************* Arduino Sketch Setup and Loop() *******************************/
 void setup() {
   Serial.begin(1250000);
   delay(5000);
