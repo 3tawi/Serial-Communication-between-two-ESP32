@@ -1,3 +1,8 @@
+/*
+// - Lien vidéo: https://youtu.be/AD6JaqEASAE
+// REQUIRES the following Arduino libraries:
+// - AnimatedGIF Library:  https://github.com/bitbank2/AnimatedGIF
+*/
 
 #include "MatrixCommon.h"
 #define FILESYSTEM SD
